@@ -1,0 +1,32 @@
+{
+  "name": "@alikacc/qris-dinamis",
+  "version": "1.0.0",
+  "description": "Client-side QRIS parser, validator, and static-to-dynamic converter",
+  "main": "./js/qris.js",
+  "exports": {
+    ".": {
+      "require": "./js/qris.js",
+      "default": "./js/qris.js"
+    }
+  },
+  "files": [
+    "js/qris.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/qris.test.js",
+    "pack:check": "npm pack --dry-run"
+  },
+  "keywords": [
+    "qris",
+    "indonesia",
+    "emvco",
+    "qr-code",
+    "payment"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

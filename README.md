@@ -94,6 +94,101 @@ The browser loads these third-party libraries from CDN:
 
 The QRIS engine itself has no external dependencies.
 
+## Use as an npm package
+
+The reusable QRIS engine is also published as a package entry point. The web UI, image scanner, service worker, and browser-specific assets remain in this repository, while npm consumers receive the dependency-free parser and converter.
+
+Install it in an existing Node.js or JavaScript project:
+
+```bash
+npm install @alikacc/qris-dinamis
+```
+
+Use it with CommonJS:
+
+```js
+const QRIS = require('@alikacc/qris-dinamis');
+
+const parsed = QRIS.parse(payload);
+
+if (!parsed.isValid || !parsed.crcValid) {
+  throw new Error(parsed.error || 'Invalid QRIS payload');
+}
+
+const dynamic = QRIS.toDynamic(payload, 125000);
+
+if (!dynamic.ok) {
+  throw new Error(dynamic.error);
+}
+
+console.log(dynamic.result);
+```
+
+Use it with an ES module import:
+
+```js
+import QRIS from '@alikacc/qris-dinamis';
+
+const result = QRIS.toDynamic(staticPayload, 125000);
+if (result.ok) console.log(result.result);
+```
+
+The package exports:
+
+| Export | Purpose |
+| --- | --- |
+| `QRIS.parse(raw)` | Parse QRIS fields and merchant information |
+| `QRIS.toDynamic(raw, amount)` | Add or replace a fixed Rupiah amount |
+| `QRIS.build(fields)` | Build a payload and calculate its CRC |
+| `QRIS.crc16(value)` | Calculate an EMVCo CRC16/CCITT-FALSE checksum |
+| `QRIS.isValidChecksum(raw)` | Quickly validate a payload checksum |
+| `QRIS.TAG` | Named QRIS/EMVCo tag constants |
+
+The npm package does not decode image files or render QR images. Pair it with a browser QR decoder and QR renderer when building a full web or mobile interface.
+
+### Package maintenance commands
+
+Run the package test suite:
+
+```bash
+npm test
+```
+
+Inspect exactly what would be included in the npm tarball:
+
+```bash
+npm run pack:check
+```
+
+Create a local package tarball for testing in another project:
+
+```bash
+npm pack
+npm install ./alikacc-qris-dinamis-1.0.0.tgz
+```
+
+### Publishing a release
+
+The package is scoped, so publish it publicly with:
+
+```bash
+npm login
+npm test
+npm run pack:check
+npm publish --access public
+```
+
+For future releases, update the version using npm's semver command, then publish again:
+
+```bash
+npm version patch   # bug fix: 1.0.0 → 1.0.1
+npm version minor   # backwards-compatible feature
+npm version major   # breaking API change
+npm publish --access public
+```
+
+Do not publish credentials, private QRIS fixtures, or the complete browser application when the goal is only to release the reusable engine. The package's published file list is intentionally limited to `js/qris.js`, `README.md`, and `LICENSE`.
+
 ## Testing
 
 Run the parser and converter tests:
