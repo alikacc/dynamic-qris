@@ -176,28 +176,36 @@
         setStatus('Kode QR berhasil dibaca.', 'ok');
         handleDecodedText(decodedText);
       })
-      .catch(function (err) {
-        console.error(err);
-        setStatus(
-          'Tidak bisa membaca QR: ' + (err.message || 'format gambar tidak dikenali.'),
-          'error'
-        );
-      });
+.catch(function (err) {
+  console.error('QR scan error:', err);
+
+  var detail = typeof err === 'string'
+    ? err
+    : JSON.stringify(err);
+
+  setStatus(
+    'Tidak bisa membaca QR: ' + detail,
+    'error'
+  );
+});
   });
 
-  function scanImageFile(file) {
-    if (typeof Html5Qrcode === 'undefined') {
-      return Promise.reject(new Error('Pemindai QR gagal dimuat (periksa koneksi internet).'));
-    }
-    if (!els.scanReaderInternal) {
-      return Promise.reject(new Error('Elemen pemindai tidak ditemukan.'));
-    }
-    var scanner = new Html5Qrcode(els.scanReaderInternal.id, { verbose: false });
-    return scanner.scanFile(file, false).finally(function () {
-      // scanFile doesn't open the camera, but always tidy up internal state.
-      try { scanner.clear(); } catch (e) { /* no-op */ }
-    });
+function scanImageFile(file) {
+  if (typeof Html5Qrcode === 'undefined') {
+    return Promise.reject('Library pemindai QR gagal dimuat.');
   }
+
+  if (!file || !file.type.startsWith('image/')) {
+    return Promise.reject('File yang dipilih bukan gambar.');
+  }
+
+  var scanner = new Html5Qrcode(els.scanReaderInternal.id);
+
+  return scanner.scanFile(file, false)
+    .finally(function () {
+      try { scanner.clear(); } catch (e) {}
+    });
+}
 
   // -----------------------------------------------------------------
   // Paste flow
