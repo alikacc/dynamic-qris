@@ -50,7 +50,12 @@
     shareBtn: document.getElementById('share-btn'),
 
     resetBtn: document.getElementById('reset-btn'),
-    scanReaderInternal: document.getElementById('qr-reader-internal')
+    scanReaderInternal: document.getElementById('qr-reader-internal'),
+    savedCard: document.getElementById('saved-card'),
+    savedName: document.getElementById('saved-name'),
+    useSavedBtn: document.getElementById('use-saved-btn'),
+    removeSavedBtn: document.getElementById('remove-saved-btn'),
+    installBtn: document.getElementById('install-btn')
   };
 
   var state = {
@@ -60,6 +65,50 @@
   };
 
   var idrFormatter = new Intl.NumberFormat('id-ID');
+  var savedKey = 'qris-dinamis.saved-payload';
+
+  function getSavedPayload() {
+    try { return localStorage.getItem(savedKey); } catch (e) { return null; }
+  }
+
+  function savePayload(raw) {
+    try { localStorage.setItem(savedKey, raw); } catch (e) { /* storage may be disabled */ }
+  }
+
+  function renderSavedCard() {
+    var saved = getSavedPayload();
+    if (!saved) return;
+    var parsed = QRIS.parse(saved);
+    if (!parsed.isValid || !parsed.crcValid) return;
+    els.savedName.textContent = parsed.info.merchantName || 'QRIS tersimpan';
+    els.savedCard.hidden = false;
+  }
+
+  renderSavedCard();
+  els.useSavedBtn.addEventListener('click', function () {
+    var saved = getSavedPayload();
+    if (saved) handleDecodedText(saved);
+  });
+  els.removeSavedBtn.addEventListener('click', function () {
+    try { localStorage.removeItem(savedKey); } catch (e) { /* no-op */ }
+    els.savedCard.hidden = true;
+  });
+
+  var deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    els.installBtn.hidden = false;
+  });
+  els.installBtn.addEventListener('click', function () {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.finally(function () {
+      deferredInstallPrompt = null;
+      els.installBtn.hidden = true;
+    });
+  });
+  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
 
   // -----------------------------------------------------------------
   // Tabs
@@ -166,6 +215,8 @@
     setStatus('Kode QRIS valid.', 'ok');
     state.currentPayload = parsed.raw;
     state.currentParsed = parsed;
+    savePayload(parsed.raw);
+    renderSavedCard();
     renderParsedInfo(parsed);
   }
 

@@ -1,0 +1,10 @@
+{
+  "name": "QRIS Dinamis",
+  "short_name": "QRIS Dinamis",
+  "description": "Buat QRIS dinamis secara privat di perangkatmu.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
