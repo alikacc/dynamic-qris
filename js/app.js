@@ -190,22 +190,29 @@
 });
   });
 
-function scanImageFile(file) {
-  if (typeof Html5Qrcode === 'undefined') {
-    return Promise.reject('Library pemindai QR gagal dimuat.');
-  }
+var imageTest = new Image();
+var imageUrl = URL.createObjectURL(file);
 
-  if (!file || !file.type.startsWith('image/')) {
-    return Promise.reject('File yang dipilih bukan gambar.');
-  }
+imageTest.onload = function () {
+  URL.revokeObjectURL(imageUrl);
 
-  var scanner = new Html5Qrcode(els.scanReaderInternal.id);
-
-  return scanner.scanFile(file, false)
-    .finally(function () {
-      try { scanner.clear(); } catch (e) {}
+  scanImageFile(file)
+    .then(function (decodedText) {
+      setStatus('Kode QR berhasil dibaca.', 'ok');
+      handleDecodedText(decodedText);
+    })
+    .catch(function (err) {
+      console.error('QR scan error:', err);
+      setStatus('QR tidak ditemukan di gambar ini.', 'error');
     });
-}
+};
+
+imageTest.onerror = function () {
+  URL.revokeObjectURL(imageUrl);
+  setStatus('Gambar tidak bisa dibaca browser. Coba screenshot atau JPG lain.', 'error');
+};
+
+imageTest.src = imageUrl;
 
   // -----------------------------------------------------------------
   // Paste flow
