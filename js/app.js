@@ -179,7 +179,7 @@
       .catch(function (err) {
         console.error(err);
         setStatus(
-          'Tidak bisa membaca kode QR dari foto ini. Pastikan foto jelas dan tidak buram, atau coba tab "Tempel Teks".',
+          'Tidak bisa membaca QR: ' + (err.message || 'format gambar tidak dikenali.'),
           'error'
         );
       });
