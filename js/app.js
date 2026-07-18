@@ -18,6 +18,8 @@
     filePreview: document.getElementById('file-preview'),
     filePreviewImg: document.getElementById('file-preview-img'),
     filePreviewName: document.getElementById('file-preview-name'),
+    replaceFileBtn: document.getElementById('replace-file-btn'),
+    rememberCheckbox: document.getElementById('remember-checkbox'),
 
     pasteTextarea: document.getElementById('paste-textarea'),
     pasteSubmitBtn: document.getElementById('paste-submit-btn'),
@@ -72,6 +74,7 @@
   }
 
   function savePayload(raw) {
+    if (!els.rememberCheckbox.checked) return;
     try { localStorage.setItem(savedKey, raw); } catch (e) { /* storage may be disabled */ }
   }
 
@@ -82,12 +85,28 @@
     if (!parsed.isValid || !parsed.crcValid) return;
     els.savedName.textContent = parsed.info.merchantName || 'QRIS tersimpan';
     els.savedCard.hidden = false;
+    showCachedQr(saved, parsed.info.merchantName);
+  }
+
+  function showCachedQr(raw, label) {
+    if (typeof QRCode === 'undefined') return;
+    var holder = document.createElement('div');
+    new QRCode(holder, { text: raw, width: 180, height: 180, colorDark: '#0f172a', colorLight: '#ffffff' });
+    var canvas = holder.querySelector('canvas');
+    if (!canvas) return;
+    els.filePreviewImg.src = canvas.toDataURL('image/png');
+    els.filePreviewName.textContent = label || 'QRIS tersimpan';
+    els.filePreview.hidden = false;
+    els.uploadZone.hidden = true;
   }
 
   renderSavedCard();
   els.useSavedBtn.addEventListener('click', function () {
     var saved = getSavedPayload();
-    if (saved) handleDecodedText(saved);
+    if (saved) {
+      els.rememberCheckbox.checked = true;
+      handleDecodedText(saved);
+    }
   });
   els.removeSavedBtn.addEventListener('click', function () {
     try { localStorage.removeItem(savedKey); } catch (e) { /* no-op */ }
@@ -138,12 +157,14 @@
   els.uploadZone.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); els.fileInput.click(); }
   });
+  els.replaceFileBtn.addEventListener('click', function () { els.fileInput.click(); });
 
   els.fileInput.addEventListener('change', function () {
     var file = els.fileInput.files && els.fileInput.files[0];
     if (!file) return;
 
     els.filePreview.hidden = false;
+    els.uploadZone.hidden = true;
     els.filePreviewName.textContent = file.name;
     var objectUrl = URL.createObjectURL(file);
     els.filePreviewImg.src = objectUrl;
@@ -245,19 +266,10 @@
       els.infoStatusBadge.className = 'badge badge-static';
     }
 
-    if (info.amount != null) {
-      els.infoExistingAmountRow.hidden = false;
-      els.infoExistingAmount.textContent = 'Rp ' + idrFormatter.format(info.amount);
-    } else {
-      els.infoExistingAmountRow.hidden = true;
-    }
-
-    els.rawDetailsContent.textContent = buildRawDetailsText(parsed);
-
     els.step2Card.hidden = false;
     els.step3Card.hidden = false;
     els.outputCard.hidden = true;
-    els.amountInput.focus({ preventScroll: false });
+    els.step2Card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function buildRawDetailsText(parsed) {
@@ -428,6 +440,7 @@
     state.dynamicResult = null;
     els.fileInput.value = '';
     els.filePreview.hidden = true;
+    els.uploadZone.hidden = false;
     els.pasteTextarea.value = '';
     els.amountInput.value = '';
     setStatus('', null);
