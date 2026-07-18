@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QRIS Dinamis — Ubah QRIS Statis Jadi Dinamis</title>
+<meta name="description" content="Tambahkan nominal ke QRIS statis kamu langsung di HP. Gratis, terbuka, dan berjalan 100% di perangkatmu.">
+<meta name="theme-color" content="#c6432a">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="signboard">
+  <div class="signboard__inner">
+    <p class="signboard__eyebrow">Alat gratis &amp; open source</p>
+    <h1>QRIS Dinamis</h1>
+    <p>Ubah QRIS statis warungmu jadi QRIS dinamis dengan nominal otomatis — supaya pembeli tidak salah ketik jumlah transfer.</p>
+    <span class="trust-badge">🔒 100% diproses di HP kamu — tidak ada foto atau data terkirim ke server manapun</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- STEP 1 — INPUT -->
+  <section class="card" aria-labelledby="step1-heading">
+    <p class="step-eyebrow">Langkah 01</p>
+    <h2 id="step1-heading">Masukkan kode QRIS</h2>
+    <p class="card-hint">Unggah foto QRIS statis kamu, atau tempel teks kodenya kalau kamu sudah punya.</p>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab-btn" id="upload-tab-btn" role="tab" aria-selected="true" aria-controls="upload-panel">📷 Unggah Foto</button>
+      <button type="button" class="tab-btn" id="paste-tab-btn" role="tab" aria-selected="false" aria-controls="paste-panel">⌨️ Tempel Teks</button>
+    </div>
+
+    <div class="tab-panel" id="upload-panel" role="tabpanel">
+      <div class="upload-zone" id="upload-zone" tabindex="0" role="button" aria-label="Pilih foto QRIS">
+        <span class="upload-zone__icon" aria-hidden="true">🧾</span>
+        <span class="upload-zone__title">Ketuk untuk pilih foto</span>
+        <span class="upload-zone__hint">Bisa dari kamera langsung atau galeri</span>
+      </div>
+      <input type="file" id="file-input" accept="image/*">
+
+      <div class="file-preview" id="file-preview" hidden>
+        <img id="file-preview-img" alt="Pratinjau foto QRIS yang diunggah">
+        <span id="file-preview-name" style="font-size:13px; color:var(--ink-soft); word-break:break-all;"></span>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="paste-panel" role="tabpanel" hidden>
+      <textarea id="paste-textarea" placeholder="Contoh: 00020101021126650014ID.CO.QRIS.WWW..." aria-label="Teks kode QRIS"></textarea>
+      <button type="button" class="btn btn-secondary" id="paste-submit-btn" style="margin-top:10px;">Periksa Kode</button>
+    </div>
+
+    <p class="status-line" id="scan-status" role="status" aria-live="polite"></p>
+
+    <!-- Required by the html5-qrcode library as a container element; kept
+         hidden since we only use its file-scanning mode, not the live
+         camera preview UI. -->
+    <div id="qr-reader-internal" style="display:none" aria-hidden="true"></div>
+  </section>
+
+  <!-- STEP 2 — PARSED INFO -->
+  <section class="card" id="step2-card" aria-labelledby="step2-heading" hidden>
+    <p class="step-eyebrow">Langkah 02</p>
+    <h2 id="step2-heading">Info yang terbaca</h2>
+    <p class="card-hint">Pastikan ini memang kode QRIS milikmu sebelum lanjut.</p>
+
+    <div class="receipt-row"><span class="label">Nama Merchant</span><span class="value" id="info-merchant-name">—</span></div>
+    <div class="receipt-row"><span class="label">Kota</span><span class="value" id="info-merchant-city">—</span></div>
+    <div class="receipt-row"><span class="label">Kode Kategori Usaha</span><span class="value" id="info-mcc">—</span></div>
+    <div class="receipt-row"><span class="label">Negara</span><span class="value" id="info-country">—</span></div>
+    <div class="receipt-row"><span class="label">Mata Uang</span><span class="value" id="info-currency">—</span></div>
+    <div class="receipt-row"><span class="label">Status</span><span class="value"><span class="badge" id="info-status-badge">—</span></span></div>
+    <div class="receipt-row" id="info-existing-amount-row" hidden><span class="label">Nominal Saat Ini</span><span class="value" id="info-existing-amount">—</span></div>
+
+    <details class="raw-details">
+      <summary>Detail teknis (mentah)</summary>
+      <div class="raw-block" id="raw-details-content"></div>
+      <p class="field-note">Susunan sub-field di dalam tag 02–51 (info akuisisi/switching) bisa berbeda-beda antar penyedia layanan pembayaran — angka mentah di atas ditampilkan apa adanya, tanpa ditebak maknanya.</p>
+    </details>
+  </section>
+
+  <!-- STEP 3 — AMOUNT -->
+  <section class="card" id="step3-card" aria-labelledby="step3-heading" hidden>
+    <p class="step-eyebrow">Langkah 03</p>
+    <h2 id="step3-heading">Masukkan nominal</h2>
+    <p class="card-hint">Nominal ini akan tertanam otomatis di QR — pembeli tinggal pindai dan konfirmasi.</p>
+
+    <div class="amount-field">
+      <span class="amount-field__prefix">Rp</span>
+      <input type="text" inputmode="numeric" id="amount-input" placeholder="0" aria-label="Nominal dalam Rupiah">
+    </div>
+
+    <button type="button" class="btn btn-primary" id="generate-btn">Buat QR Dinamis</button>
+    <p class="status-line is-error" id="generate-error" role="alert"></p>
+  </section>
+
+  <!-- OUTPUT -->
+  <section class="ticket" id="output-card" aria-labelledby="output-heading" hidden>
+    <p class="ticket__heading" id="output-heading">✂ QRIS Dinamis Kamu ✂</p>
+
+    <div class="ticket__qr" id="qr-container"></div>
+
+    <div class="ticket__rows">
+      <div class="receipt-row"><span class="label">Merchant</span><span class="value" id="output-merchant-value">—</span></div>
+      <div class="receipt-row"><span class="label">Nominal</span><span class="value" id="output-amount-value">—</span></div>
+    </div>
+
+    <hr class="ticket__divider">
+
+    <div class="raw-output">
+      <div id="raw-output-text"></div>
+      <button type="button" class="btn-ghost" id="copy-btn">Salin</button>
+    </div>
+
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="download-btn">⬇ Unduh PNG</button>
+      <button type="button" class="btn btn-secondary" id="share-btn" hidden>↗ Bagikan</button>
+    </div>
+  </section>
+
+  <button type="button" class="btn btn-ghost" id="reset-btn" style="width:100%;">↺ Mulai lagi / pindai kode lain</button>
+
+</main>
+
+<footer class="site-footer">
+  <p>
+    Proyek open source — bukan aplikasi resmi dan tidak berafiliasi dengan Bank Indonesia, ASPI, atau penyedia QRIS manapun.
+    Alat ini hanya menambahkan nominal ke dalam kode QRIS milikmu sendiri; ia tidak mengubah data merchant atau rekening tujuan.
+    Untuk pencatatan transaksi otomatis dan rekonsiliasi, tetap gunakan aplikasi resmi dari penyedia QRIS-mu.
+  </p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/qris.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
